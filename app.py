@@ -10,7 +10,6 @@ from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
-CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
@@ -104,6 +103,20 @@ def hello_world():
     return render_template('home.html')
 
 
+@app.route('/add-data/<max>')
+def add_data(max):
+    done = False
+    for num in range(1, int(max)):
+        user = User(
+            username=f'test{num}', email=f'test{num}@test.com', password=f'test{num}')
+        db.session.add(user)
+        db.session.commit()
+        profile = Profile(state=f"CO", country=f"USA", user_id=user.id)
+        db.session.add(profile)
+        db.session.commit()
+    return 'Users added'
+
+
 @app.route('/api/v1/register', methods=['POST'])
 def register():
     post_data = request.get_json()
@@ -122,6 +135,12 @@ def register():
 @app.route('/api/v1/profile', methods=['POST'])
 def add_profile():
     post_data = request.get_json()
+    state = post_data.get('state')
+    country = post_data.get('country')
+    new_profile = Profile(state=state, country=country)
+    db.session.add(new_profile)
+    db.session.commit()
+    return jsonify(profile_schema.dump(new_profile))
 
 
 if __name__ == '__main__':
