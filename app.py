@@ -3,8 +3,10 @@ import os
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
@@ -22,12 +24,23 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable=False)
     profiles = db.relationship('Profile', backref='user', lazy=True)
 
+    def __init__(self, userName, email, password):
+        self.userName = userName
+        self.email = email
+        self.password = password
+       
+
 
 class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     state = db.Column(db.String(2), nullable=True)
     country = db.Column(db.String(4), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ('id', 'userName', 'email', 'password')
 
 
 @app.route("/")
