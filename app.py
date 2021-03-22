@@ -1,9 +1,10 @@
 import os
 from datetime import timedelta
 
-from flask import Flask, render_template
+from flask import Flask, request, jsonify, session, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from marshmallow import fields
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 
@@ -26,17 +27,17 @@ flask_bcrypy = Bcrypt(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    userName = db.Column(db.String(100), nullable=False, unique=True)
+    username = db.Column(db.String(100), nullable=False, unique=True)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
-    profiles = db.relationship('Profile', backref='user', lazy=True)
+    profile = db.relationship('Profile', uselist=False, back_populates=False)
     blogs = db.relationship('Blog', backref='user', lazy=True)
     schedules = db.relationship('Schedule', backref='user', lazy=True)
 
-    def __init__(self, userName, email, password):
-        self.userName = userName
-        self.email = email
-        self.password = password
+    # def __init__(self, username, email, password):
+    #     self.username = username
+    #     self.email = email
+    #     self.password = password
 
 
 class Profile(db.Model):
@@ -44,6 +45,7 @@ class Profile(db.Model):
     state = db.Column(db.String(2), nullable=True)
     country = db.Column(db.String(4), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', back_populates=False)
 
 
 class Blog(db.Model):
@@ -60,19 +62,66 @@ class Schedule(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
+class ProfileSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Profile
+        include_fk = True
+
+
+class BlogSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Blog
+        include_fk = True
+
+
+class ScheduleSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Schedule
+        include_fk = True
+
+
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'userName', 'email', 'password')
+        fields = ('id', 'username', 'email', 'profile', 'blogs', 'schedules')
+    profile = fields.Nested(ProfileSchema)
+    blogs = fields.List(fields.Nested(BlogSchema))
+    schedules = fields.List(fields.Nested(ScheduleSchema))
+#     profiles = fields.List(fields.Nested(ProfileSchema))
+
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
+profile_schema = ProfileSchema()
 
 
 @app.route("/")
 def hello_world():
+    user = User.query.first()
+    profile = Profile.query.first()
+    print(user_schema.dump(user))
+    print(profile_schema.dump(profile))
+    print(user.profile)
     return render_template('home.html')
 
 
-@app.route('/api')
-def hello_api():
-    return "hello from api"
+@app.route('/api/v1/register', methods=['POST'])
+def register():
+    post_data = request.get_json()
+    username = post_data.get('username')
+    email = post_data.get('email')
+    password = post_data.get('password')
+    hashed_password = flask_bcrypy.generate_password_hash(
+        password).decode('utf-8')
+    new_user = User(username=username, email=email, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+    print(session)
+    return jsonify(user_schema.dump(new_user))
+
+
+@app.route('/api/v1/profile', methods=['POST'])
+def add_profile():
+    post_data = request.get_json()
 
 
 if __name__ == '__main__':
