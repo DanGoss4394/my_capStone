@@ -2,3 +2,6 @@ venv
 pipfile
 pipfile.lock
 __pycahe__
+app.sqlite
+.env
+requirements.txt
