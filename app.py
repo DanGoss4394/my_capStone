@@ -146,6 +146,14 @@ def get_user(user_id):
     return jsonify(user_schema.dump(user))
 
 
+@app.route('/api/v1/delete_user/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    user = User.query.get(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return "User Deleted!"
+
+
 @app.route('/api/v1/profile', methods=['POST'])
 def add_profile():
     post_data = request.get_json()
