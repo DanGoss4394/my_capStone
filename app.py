@@ -50,7 +50,7 @@ class Profile(db.Model):
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.String(250), nullable=False)
+    description = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
@@ -91,21 +91,19 @@ class UserSchema(ma.Schema):
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 profile_schema = ProfileSchema()
+blog_schema = BlogSchema()
+blogs_schema = BlogSchema(many=True)
+schedule_schema = ScheduleSchema()
+schedules_schema = ScheduleSchema(many=True)
 
 
 @app.route("/")
 def hello_world():
-    user = User.query.first()
-    profile = Profile.query.first()
-    print(user_schema.dump(user))
-    print(profile_schema.dump(profile))
-    print(user.profile)
     return render_template('home.html')
 
 
 @app.route('/add-data/<max>')
 def add_data(max):
-    done = False
     for num in range(1, int(max)):
         user = User(
             username=f'test{num}', email=f'test{num}@test.com', password=f'test{num}')
@@ -113,6 +111,14 @@ def add_data(max):
         db.session.commit()
         profile = Profile(state=f"CO", country=f"USA", user_id=user.id)
         db.session.add(profile)
+        db.session.commit()
+        blog = Blog(title=f"Some Title{num}",
+                    description=f"Some kind of description{num}", user_id=user.id)
+        db.session.add(blog)
+        db.session.commit()
+        schedule = Schedule(
+            title=f"Some Title{num}", description=f"Some kind of description{num}", user_id=user.id)
+        db.session.add(schedule)
         db.session.commit()
     return 'Users added'
 
@@ -128,7 +134,6 @@ def register():
     new_user = User(username=username, email=email, password=hashed_password)
     db.session.add(new_user)
     db.session.commit()
-    print(session)
     return jsonify(user_schema.dump(new_user))
 
 
@@ -141,6 +146,28 @@ def add_profile():
     db.session.add(new_profile)
     db.session.commit()
     return jsonify(profile_schema.dump(new_profile))
+
+
+@app.route('/api/v1/blog', methods=['POST'])
+def add_blog():
+    post_data = request.get_json()
+    title = post_data.get('title')
+    description = post_data.get('description')
+    new_blog = Blog(title=title, description=description)
+    db.session.add(new_blog)
+    db.session.commit()
+    return jsonify(blog_schema.dump(new_blog))
+
+
+@app.route('/api/v1/schedule', methods=['POST'])
+def add_schedule():
+    post_data = request.get_json()
+    title = post_data.get('title')
+    description = post_data.get('description')
+    new_schedule = Schedule(title=title, description=description)
+    db.session.add(new_schedule)
+    db.session.commit()
+    return jsonify(schedule_schema.dump(new_schedule))
 
 
 if __name__ == '__main__':
