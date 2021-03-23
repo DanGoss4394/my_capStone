@@ -159,6 +159,21 @@ def add_blog():
     return jsonify(blog_schema.dump(new_blog))
 
 
+@app.route('/api/v1/get_all_blogs', methods=['GET'])
+def get_all_blogs():
+    all_blogs = Blog.query.all()
+    result = blogs_schema.dump(all_blogs)
+    return jsonify(result)
+
+
+@app.route('/api/v1/delete_blog/<blog_id>', methods=['DELETE'])
+def delete_blog(blog_id):
+    blog = Blog.query.get(blog_id)
+    db.session.delete(blog)
+    db.session.commit()
+    return "Blog Deleted!"
+
+
 @app.route('/api/v1/schedule', methods=['POST'])
 def add_schedule():
     post_data = request.get_json()
@@ -168,6 +183,26 @@ def add_schedule():
     db.session.add(new_schedule)
     db.session.commit()
     return jsonify(schedule_schema.dump(new_schedule))
+
+
+@app.route('/api/v1/get_all_schedules', methods=['GET'])
+def get_all_schedules():
+    all_schedules = Schedule.query.all()
+    result = schedules_schema.dump(all_schedules)
+    return jsonify(result)
+
+
+# @app.route('/api/v1/edit_schedule', methods=['PATCH'])
+# def edit_schedule():
+#     update_schedule = request.get
+
+
+@app.route('/api/v1/delete_schedule/<schedule_id>', methods=['DELETE'])
+def delete_schedule(schedule_id):
+    schedule = Schedule.query.get(schedule_id)
+    db.session.delete(schedule)
+    db.session.commit()
+    return "Event Deleted!"
 
 
 if __name__ == '__main__':
