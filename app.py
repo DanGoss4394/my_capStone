@@ -122,6 +122,8 @@ def add_data(max):
         db.session.commit()
     return 'Users added'
 
+# TODO: need to handle unqie userName error
+
 
 @app.route('/api/v1/register', methods=['POST'])
 def register():
@@ -135,6 +137,13 @@ def register():
     db.session.add(new_user)
     db.session.commit()
     return jsonify(user_schema.dump(new_user))
+
+
+# TODO: if user does not exist
+@app.route('/api/v1/get_user/<user_id>')
+def get_user(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    return jsonify(user_schema.dump(user))
 
 
 @app.route('/api/v1/profile', methods=['POST'])
