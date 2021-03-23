@@ -50,7 +50,7 @@ class Profile(db.Model):
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
@@ -104,7 +104,7 @@ def hello_world():
 
 @app.route('/add-data/<max>')
 def add_data(max):
-    for num in range(1, int(max)):
+    for num in range(1, int(max) + 1):
         user = User(
             username=f'test{num}', email=f'test{num}@test.com', password=f'test{num}')
         db.session.add(user)
@@ -113,7 +113,7 @@ def add_data(max):
         db.session.add(profile)
         db.session.commit()
         blog = Blog(title=f"Some Title{num}",
-                    description=f"Some kind of description{num}", user_id=user.id)
+                    content=f"Some kind of content{num}", user_id=user.id)
         db.session.add(blog)
         db.session.commit()
         schedule = Schedule(
@@ -145,6 +145,10 @@ def get_user(user_id):
     user = User.query.filter_by(id=user_id).first()
     return jsonify(user_schema.dump(user))
 
+# TODO: get all users?
+
+# TODO: Edit user
+
 
 @app.route('/api/v1/delete_user/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
@@ -165,17 +169,27 @@ def add_profile():
     db.session.commit()
     return jsonify(profile_schema.dump(new_profile))
 
+# TODO: Get Single Profile
+
+# TODO: Get All profile
+
+# TODO: Edit Profile
+
+# TODO: Delete Profile
+
 
 @app.route('/api/v1/blog', methods=['POST'])
 def add_blog():
     post_data = request.get_json()
     title = post_data.get('title')
-    description = post_data.get('description')
+    content = post_data.get('content')
     user_id = post_data.get('user_id')
-    new_blog = Blog(title=title, description=description, user_id=user_id)
+    new_blog = Blog(title=title, content=content, user_id=user_id)
     db.session.add(new_blog)
     db.session.commit()
     return jsonify(blog_schema.dump(new_blog))
+
+# TODO: get single blog
 
 
 @app.route('/api/v1/get_all_blogs', methods=['GET'])
@@ -183,6 +197,15 @@ def get_all_blogs():
     all_blogs = Blog.query.all()
     result = blogs_schema.dump(all_blogs)
     return jsonify(result)
+
+
+@app.route('/api/v1/edit_blog/<blog_id>', methods=['PATCH'])
+def edit_blog(blog_id):
+    blog = Blog.query.filter_by(id=blog_id).first()
+    blog.title = request.json.get('title')
+    blog.content = request.json.get('content')
+    db.session.commit()
+    return jsonify(blog_schema.dump(blog))
 
 
 @app.route('/api/v1/delete_blog/<blog_id>', methods=['DELETE'])
@@ -205,6 +228,8 @@ def add_schedule():
     db.session.commit()
     return jsonify(schedule_schema.dump(new_schedule))
 
+# TODO: get single schedule
+
 
 @app.route('/api/v1/get_all_schedules', methods=['GET'])
 def get_all_schedules():
@@ -213,9 +238,13 @@ def get_all_schedules():
     return jsonify(result)
 
 
-# @app.route('/api/v1/edit_schedule', methods=['PATCH'])
-# def edit_schedule():
-#     update_schedule = request.get
+@app.route('/api/v1/edit_schedule/<schedule_id>', methods=['PATCH'])
+def edit_schedule(schedule_id):
+    schedule = Schedule.query.filter_by(id=schedule_id).first()
+    schedule.title = request.json.get('title')
+    schedule.description = request.json.get('description')
+    db.session.commit()
+    return jsonify(schedule_schema.dump(schedule))
 
 
 @app.route('/api/v1/delete_schedule/<schedule_id>', methods=['DELETE'])
