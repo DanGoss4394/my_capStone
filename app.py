@@ -30,9 +30,12 @@ class User(db.Model):
     username = db.Column(db.String(100), nullable=False, unique=True)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
-    profile = db.relationship('Profile', uselist=False, back_populates=False)
-    blogs = db.relationship('Blog', backref='user', lazy=True)
-    schedules = db.relationship('Schedule', backref='user', lazy=True)
+    profile = db.relationship('Profile', uselist=False, back_populates=False,
+                              cascade='all, delete-orphan', passive_deletes=True)
+    blogs = db.relationship('Blog', backref='user', lazy=True,
+                            cascade='all, delete-orphan', passive_deletes=True)
+    schedules = db.relationship('Schedule', backref='user', lazy=True,
+                                cascade='all, delete-orphan', passive_deletes=True)
 
     # def __init__(self, username, email, password):
     #     self.username = username
@@ -44,7 +47,8 @@ class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     state = db.Column(db.String(2), nullable=True)
     country = db.Column(db.String(4), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id', ondelete='CASCADE'), nullable=False)
     user = db.relationship('User', back_populates=False)
 
 
@@ -52,14 +56,16 @@ class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id', ondelete='CASCADE'), nullable=False)
 
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(35), nullable=False)
     description = db.Column(db.String(35), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id', ondelete='CASCADE'), nullable=False)
 
 
 class ProfileSchema(ma.SQLAlchemyAutoSchema):
@@ -123,8 +129,6 @@ def add_data(max):
         db.session.commit()
     return 'Users added'
 
-# TODO: need to handle unqie userName error
-
 
 @app.route('/api/v1/register', methods=['POST'])
 def register():
@@ -171,12 +175,15 @@ def edit_user(user_id):
     return jsonify(user_schema.dump(user))
 
 
-@app.route('/api/v1/delete_user/<user_id>', methods=['DELETE'])
-def delete_user(user_id):
-    user = User.query.get(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    return "User Deleted!"
+@app.route('/api/v1/delete_user/<id>', methods=['DELETE'])
+def delete_user(id):
+    user = User.query.filter_by(id=id).first()
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        session.clear()
+        return jsonify('User Deleted')
+    return 'User Not Found', 404
 
 
 @app.route('/api/v1/profile', methods=['POST'])
@@ -304,7 +311,7 @@ def login():
     post_data = request.get_json()
     db_user = User.query.filter_by(username=post_data.get('username')).first()
     if db_user is None:
-        return "Username NOT found", 404
+        return "Username or Password Invalid", 404
     password = post_data.get('password')
     db_user_hashed_password = db_user.password
     valid_password = flask_bcrypy.check_password_hash(
@@ -313,7 +320,7 @@ def login():
         session.permanent = True
         session['username'] = post_data.get('username')
         return jsonify('User Verified')
-    return "Password invalid", 404
+    return "Username or Password invalid", 404
 
 
 @app.route('/api/v1/logged_in', methods=['GET'])
