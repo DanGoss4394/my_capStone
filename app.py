@@ -16,6 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
     os.path.join(basedir, 'app.sqlite')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.environ.get('SECRET_KEY')
+app.permanent_session_lifetime = timedelta(weeks=2)
 
 
 CORS(app, supports_credentials=True)
@@ -85,7 +86,7 @@ class UserSchema(ma.Schema):
     profile = fields.Nested(ProfileSchema)
     blogs = fields.List(fields.Nested(BlogSchema))
     schedules = fields.List(fields.Nested(ScheduleSchema))
-#     profiles = fields.List(fields.Nested(ProfileSchema))
+#   profiles = fields.List(fields.Nested(ProfileSchema))
 
 
 user_schema = UserSchema()
@@ -131,17 +132,24 @@ def register():
     username = post_data.get('username')
     email = post_data.get('email')
     password = post_data.get('password')
+    db_user = User.query.filter_by(username=username, email=email).first()
+    if db_user:
+        return 'Username or Email All Ready Used', 409
     hashed_password = flask_bcrypy.generate_password_hash(
         password).decode('utf-8')
     new_user = User(username=username, email=email, password=hashed_password)
     db.session.add(new_user)
     db.session.commit()
+    session.permanent = True
+    session['username'] = username
     return jsonify(user_schema.dump(new_user))
 
 
-# TODO: if user does not exist
 @app.route('/api/v1/get_user/<user_id>')
 def get_user(user_id):
+    db_user = User.query.filter_by(id=user_id).first()
+    if db_user is None:
+        return "Username NOT found", 404
     user = User.query.filter_by(id=user_id).first()
     return jsonify(user_schema.dump(user))
 
@@ -289,6 +297,42 @@ def delete_schedule(schedule_id):
     db.session.delete(schedule)
     db.session.commit()
     return "Event Deleted!"
+
+
+@app.route('/api/v1/login', methods=['POST'])
+def login():
+    post_data = request.get_json()
+    db_user = User.query.filter_by(username=post_data.get('username')).first()
+    if db_user is None:
+        return "Username NOT found", 404
+    password = post_data.get('password')
+    db_user_hashed_password = db_user.password
+    valid_password = flask_bcrypy.check_password_hash(
+        db_user_hashed_password, password)
+    if valid_password:
+        session.permanent = True
+        session['username'] = post_data.get('username')
+        return jsonify('User Verified')
+    return "Password invalid", 404
+
+
+@app.route('/api/v1/logged_in', methods=['GET'])
+def logged_in():
+    if 'username' in session:
+        db_user = User.query.filter_by(username=session['username']).first()
+        if db_user:
+            return jsonify('User Loggedin Via Cookie')
+        else:
+            return jsonify('Session Exists, but no user')
+    else:
+        return jsonify('Nope!')
+
+
+@app.route('/api/v1/logout', methods=['POST'])
+def logout():
+    session.clear()
+    # session.pop('username', None)
+    return jsonify('Logged out')
 
 
 if __name__ == '__main__':
