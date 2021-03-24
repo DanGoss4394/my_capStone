@@ -145,9 +145,22 @@ def get_user(user_id):
     user = User.query.filter_by(id=user_id).first()
     return jsonify(user_schema.dump(user))
 
-# TODO: get all users?
 
-# TODO: Edit user
+@app.route('/api/v1/get_all_users')
+def get_all_users():
+    all_users = User.query.all()
+    result = users_schema.dump(all_users)
+    return jsonify(result)
+
+
+@app.route('/api/v1/edit_user/<user_id>', methods=['PATCH'])
+def edit_user(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    user.username = request.json.get('username')
+    user.email = request.json.get('email')
+    user.password = request.json.get('password')
+    db.session.commit()
+    return jsonify(user_schema.dump(user))
 
 
 @app.route('/api/v1/delete_user/<user_id>', methods=['DELETE'])
@@ -169,13 +182,28 @@ def add_profile():
     db.session.commit()
     return jsonify(profile_schema.dump(new_profile))
 
-# TODO: Get Single Profile
 
-# TODO: Get All profile
+@app.route('/api/v1/get_profile/<profile_id>')
+def get_profile(profile_id):
+    profile = Profile.query.filter_by(id=profile_id).first()
+    return jsonify(profile_schema.dump(profile))
 
-# TODO: Edit Profile
 
-# TODO: Delete Profile
+@app.route('/api/v1/edit_profile/<profile_id>', methods=['PATCH'])
+def edit_profile(profile_id):
+    profile = Profile.query.filter_by(id=profile_id).first()
+    profile.state = request.json.get('state')
+    profile.country = request.json.get('country')
+    db.session.commit()
+    return jsonify(profile_schema.dump(profile))
+
+
+@app.route('/api/v1/delete_profile/<profile_id>', methods=['DELETE'])
+def delete_profile(profile_id):
+    profile = Profile.query.get(profile_id)
+    db.session.delete(profile)
+    db.session.commit()
+    return "Profile Deleted!"
 
 
 @app.route('/api/v1/blog', methods=['POST'])
@@ -189,7 +217,11 @@ def add_blog():
     db.session.commit()
     return jsonify(blog_schema.dump(new_blog))
 
-# TODO: get single blog
+
+@app.route('/api/v1/get_blog/<blog_id>')
+def get_blog(blog_id):
+    blog = Blog.query.filter_by(id=blog_id).first()
+    return jsonify(blog_schema.dump(blog))
 
 
 @app.route('/api/v1/get_all_blogs', methods=['GET'])
@@ -228,7 +260,11 @@ def add_schedule():
     db.session.commit()
     return jsonify(schedule_schema.dump(new_schedule))
 
-# TODO: get single schedule
+
+@app.route('/api/v1/get_schedule/<schedule_id>')
+def get_schedule(schedule_id):
+    schedule = Schedule.query.filter_by(id=schedule_id).first()
+    return jsonify(schedule_schema.dump(schedule))
 
 
 @app.route('/api/v1/get_all_schedules', methods=['GET'])
