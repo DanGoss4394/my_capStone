@@ -31,11 +31,11 @@ class User(db.Model):
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
     profile = db.relationship('Profile', uselist=False, back_populates=False,
-                              cascade='all, delete-orphan', passive_deletes=True)
+                              cascade='all, delete', passive_deletes=True)
     blogs = db.relationship('Blog', backref='user', lazy=True,
-                            cascade='all, delete-orphan', passive_deletes=True)
+                            cascade='all, delete', passive_deletes=True)
     schedules = db.relationship('Schedule', backref='user', lazy=True,
-                                cascade='all, delete-orphan', passive_deletes=True)
+                                cascade='all, delete', passive_deletes=True)
 
     # def __init__(self, username, email, password):
     #     self.username = username
@@ -58,6 +58,7 @@ class Blog(db.Model):
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey(
         'user.id', ondelete='CASCADE'), nullable=False)
+    # user = db.relationship('User', back_populates=False)
 
 
 class Schedule(db.Model):
@@ -66,6 +67,7 @@ class Schedule(db.Model):
     description = db.Column(db.String(35), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey(
         'user.id', ondelete='CASCADE'), nullable=False)
+    # user = db.relationship('User', back_populates=False)
 
 
 class ProfileSchema(ma.SQLAlchemyAutoSchema):
@@ -92,7 +94,12 @@ class UserSchema(ma.Schema):
     profile = fields.Nested(ProfileSchema)
     blogs = fields.List(fields.Nested(BlogSchema))
     schedules = fields.List(fields.Nested(ScheduleSchema))
-#   profiles = fields.List(fields.Nested(ProfileSchema))
+
+    # profile = fields.Nested(lambda: ProfileSchema(only=['username']))
+    # blogs = fields.List(fields.Nested(lambda: BlogSchema(only=['username'])))
+    # schedules = fields.List(fields.Nested(
+    #     lambda: ScheduleSchema(only=['username'])))
+    # profiles = fields.List(fields.Nested(ProfileSchema))
 
 
 user_schema = UserSchema()
@@ -338,7 +345,6 @@ def logged_in():
 @app.route('/api/v1/logout', methods=['POST'])
 def logout():
     session.clear()
-    # session.pop('username', None)
     return jsonify('Logged out')
 
 
