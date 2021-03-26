@@ -30,12 +30,12 @@ class User(db.Model):
     username = db.Column(db.String(100), nullable=False, unique=True)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
-    profile = db.relationship('Profile', uselist=False, back_populates=False,
-                              cascade='all, delete', passive_deletes=True)
+    state = db.Column(db.String(2), nullable=True)
+    country = db.Column(db.String(4), nullable=True)
     blogs = db.relationship('Blog', backref='user', lazy=True,
-                            cascade='all, delete', passive_deletes=True)
+                            cascade='all, delete')
     schedules = db.relationship('Schedule', backref='user', lazy=True,
-                                cascade='all, delete', passive_deletes=True)
+                                cascade='all, delete')
 
     # def __init__(self, username, email, password):
     #     self.username = username
@@ -43,37 +43,18 @@ class User(db.Model):
     #     self.password = password
 
 
-class Profile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    state = db.Column(db.String(2), nullable=True)
-    country = db.Column(db.String(4), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'user.id', ondelete='CASCADE'), nullable=False)
-    user = db.relationship('User', back_populates=False)
-
-
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'user.id', ondelete='CASCADE'), nullable=False)
-    # user = db.relationship('User', back_populates=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(35), nullable=False)
     description = db.Column(db.String(35), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'user.id', ondelete='CASCADE'), nullable=False)
-    # user = db.relationship('User', back_populates=False)
-
-
-class ProfileSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Profile
-        include_fk = True
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
 class BlogSchema(ma.SQLAlchemyAutoSchema):
@@ -91,20 +72,17 @@ class ScheduleSchema(ma.SQLAlchemyAutoSchema):
 class UserSchema(ma.Schema):
     class Meta:
         fields = ('id', 'username', 'email', 'profile', 'blogs', 'schedules')
-    profile = fields.Nested(ProfileSchema)
-    blogs = fields.List(fields.Nested(BlogSchema))
-    schedules = fields.List(fields.Nested(ScheduleSchema))
-
-    # profile = fields.Nested(lambda: ProfileSchema(only=['username']))
-    # blogs = fields.List(fields.Nested(lambda: BlogSchema(only=['username'])))
-    # schedules = fields.List(fields.Nested(
-    #     lambda: ScheduleSchema(only=['username'])))
-    # profiles = fields.List(fields.Nested(ProfileSchema))
+    blogs = fields.List(fields.Nested(
+        lambda: BlogSchema(only=('title', 'content'))))
+    schedules = fields.List(fields.Nested(
+        lambda: ScheduleSchema(only=('title', 'description'))))
+    # profile = fields.Nested(ProfileSchema)
+    # blogs = fields.List(fields.Nested(BlogSchema))
+    # schedules = fields.List(fields.Nested(ScheduleSchema))
 
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
-profile_schema = ProfileSchema()
 blog_schema = BlogSchema()
 blogs_schema = BlogSchema(many=True)
 schedule_schema = ScheduleSchema()
@@ -119,22 +97,21 @@ def hello_world():
 @app.route('/add-data/<max>')
 def add_data(max):
     for num in range(1, int(max) + 1):
+        hashed_password = flask_bcrypy.generate_password_hash(
+            f'test{num}').decode('utf-8')
         user = User(
-            username=f'test{num}', email=f'test{num}@test.com', password=f'test{num}')
+            username=f'test{num}', email=f'test{num}@test.com', password=hashed_password)
         db.session.add(user)
         db.session.commit()
-        profile = Profile(state=f"CO", country=f"USA", user_id=user.id)
-        db.session.add(profile)
-        db.session.commit()
-        blog = Blog(title=f"Some Title{num}",
-                    content=f"Some kind of content{num}", user_id=user.id)
+        blog = Blog(
+            title=f"Some Title{num}", content=f"Some kind of content{num}", user_id=user.id)
         db.session.add(blog)
         db.session.commit()
         schedule = Schedule(
             title=f"Some Title{num}", description=f"Some kind of description{num}", user_id=user.id)
         db.session.add(schedule)
         db.session.commit()
-    return 'Users added'
+    return 'Data added'
 
 
 @app.route('/api/v1/register', methods=['POST'])
@@ -177,7 +154,8 @@ def edit_user(user_id):
     user = User.query.filter_by(id=user_id).first()
     user.username = request.json.get('username')
     user.email = request.json.get('email')
-    user.password = request.json.get('password')
+    user.state = request.json.get('state')
+    user.country = request.json.get('country')
     db.session.commit()
     return jsonify(user_schema.dump(user))
 
@@ -193,39 +171,17 @@ def delete_user(id):
     return 'User Not Found', 404
 
 
-@app.route('/api/v1/profile', methods=['POST'])
+@app.route('/api/v1/profile', methods=['PATCH'])
 def add_profile():
     post_data = request.get_json()
     state = post_data.get('state')
     country = post_data.get('country')
     user_id = post_data.get('user_id')
-    new_profile = Profile(state=state, country=country, user_id=user_id)
-    db.session.add(new_profile)
+    user = User.query.filter_by(id=user_id).first()
+    user.state = state
+    user.country = country
     db.session.commit()
-    return jsonify(profile_schema.dump(new_profile))
-
-
-@app.route('/api/v1/get_profile/<profile_id>')
-def get_profile(profile_id):
-    profile = Profile.query.filter_by(id=profile_id).first()
-    return jsonify(profile_schema.dump(profile))
-
-
-@app.route('/api/v1/edit_profile/<profile_id>', methods=['PATCH'])
-def edit_profile(profile_id):
-    profile = Profile.query.filter_by(id=profile_id).first()
-    profile.state = request.json.get('state')
-    profile.country = request.json.get('country')
-    db.session.commit()
-    return jsonify(profile_schema.dump(profile))
-
-
-@app.route('/api/v1/delete_profile/<profile_id>', methods=['DELETE'])
-def delete_profile(profile_id):
-    profile = Profile.query.get(profile_id)
-    db.session.delete(profile)
-    db.session.commit()
-    return "Profile Deleted!"
+    return jsonify(user_schema.dump())
 
 
 @app.route('/api/v1/blog', methods=['POST'])
@@ -316,7 +272,9 @@ def delete_schedule(schedule_id):
 @app.route('/api/v1/login', methods=['POST'])
 def login():
     post_data = request.get_json()
+    print(post_data)
     db_user = User.query.filter_by(username=post_data.get('username')).first()
+    print(db_user)
     if db_user is None:
         return "Username or Password Invalid", 404
     password = post_data.get('password')
@@ -327,6 +285,7 @@ def login():
         session.permanent = True
         session['username'] = post_data.get('username')
         return jsonify('User Verified')
+
     return "Username or Password invalid", 404
 
 
