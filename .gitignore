@@ -1,7 +1,8 @@
 venv
 pipfile
 pipfile.lock
-__pycahe__
+__pycache__
 app.sqlite
+.vscode
 .env
 requirements.txt
