@@ -274,9 +274,7 @@ def delete_schedule(schedule_id):
 @app.route('/api/v1/login', methods=['POST'])
 def login():
     post_data = request.get_json()
-    print(post_data)
     db_user = User.query.filter_by(username=post_data.get('username')).first()
-    print(db_user)
     if db_user is None:
         return "Username or Password Invalid", 404
     password = post_data.get('password')
@@ -288,7 +286,7 @@ def login():
         session['username'] = post_data.get('username')
         resp = make_response('Cookie was Set')
         resp.set_cookie(
-            'username', username['username'], samesite='Lax', max_age=60*60*3)
+            'username', "foo", samesite='Lax', max_age=60*60*3)
         # Ensure you use "add" to not overwrite existing cookie headers
         resp.headers.add(
             'Set-Cookie', 'cross-site-cookie=bar; SameSite=None; Secure')
