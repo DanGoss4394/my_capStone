@@ -11,8 +11,12 @@ from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///app.sqlite'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL') or 'sqlite:///app.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.secret_key = os.environ.get('SECRET_KEY')
 app.permanent_session_lifetime = timedelta(weeks=2)
 
@@ -300,8 +304,11 @@ def logged_in():
 
 @app.route('/api/v1/logout', methods=['POST'])
 def logout():
-    session.clear()
-    return jsonify('Logged out')
+    session.pop('username', None)
+    return jsonify('Logged Out')
+# def logout():
+#     session.clear()
+#     return jsonify('Logged out')
 
 
 if __name__ == '__main__':
