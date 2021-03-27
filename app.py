@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 
-from flask import Flask, request, jsonify, session, render_template
+from flask import Flask, request, jsonify, session, render_template, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from marshmallow import fields
@@ -286,6 +286,12 @@ def login():
     if valid_password:
         session.permanent = True
         session['username'] = post_data.get('username')
+        resp = make_response('Cookie was Set')
+        resp.set_cookie(
+            'username', username['username'], samesite='Lax', max_age=60*60*3)
+        # Ensure you use "add" to not overwrite existing cookie headers
+        resp.headers.add(
+            'Set-Cookie', 'cross-site-cookie=bar; SameSite=None; Secure')
         return jsonify({"message": "User Verified", "user_id": db_user.id})
     return "Username or Password invalid"
 
