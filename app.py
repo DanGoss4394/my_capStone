@@ -132,7 +132,7 @@ def register():
     db.session.commit()
     session.permanent = True
     session['username'] = username
-    return jsonify(user_schema.dump(new_user))
+    return jsonify({"message": "User Verified", "user_id": new_user.id})
 
 
 @app.route('/api/v1/get_user/<user_id>')
