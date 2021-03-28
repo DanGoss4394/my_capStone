@@ -39,11 +39,6 @@ class User(db.Model):
     schedules = db.relationship('Schedule', backref='user', lazy=True,
                                 cascade='all, delete')
 
-    # def __init__(self, username, email, password):
-    #     self.username = username
-    #     self.email = email
-    #     self.password = password
-
 
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,9 +73,6 @@ class UserSchema(ma.Schema):
         lambda: BlogSchema(only=('title', 'content'))))
     schedules = fields.List(fields.Nested(
         lambda: ScheduleSchema(only=('title', 'description'))))
-    # profile = fields.Nested(ProfileSchema)
-    # blogs = fields.List(fields.Nested(BlogSchema))
-    # schedules = fields.List(fields.Nested(ScheduleSchema))
 
 
 user_schema = UserSchema()
@@ -94,26 +86,6 @@ schedules_schema = ScheduleSchema(many=True)
 @app.route("/")
 def hello_world():
     return render_template('home.html')
-
-
-@app.route('/add-data/<max>')
-def add_data(max):
-    for num in range(1, int(max) + 1):
-        hashed_password = flask_bcrypy.generate_password_hash(
-            f'test{num}').decode('utf-8')
-        user = User(
-            username=f'test{num}', email=f'test{num}@test.com', password=hashed_password)
-        db.session.add(user)
-        db.session.commit()
-        blog = Blog(
-            title=f"Some Title{num}", content=f"Some kind of content{num}", user_id=user.id)
-        db.session.add(blog)
-        db.session.commit()
-        schedule = Schedule(
-            title=f"Some Title{num}", description=f"Some kind of description{num}", user_id=user.id)
-        db.session.add(schedule)
-        db.session.commit()
-    return 'Data added'
 
 
 @app.route('/api/v1/register', methods=['POST'])
@@ -284,12 +256,6 @@ def login():
     if valid_password:
         session.permanent = True
         session['username'] = post_data.get('username')
-        resp = make_response('Cookie was Set')
-        resp.set_cookie(
-            'username', "foo", samesite='Lax', max_age=60*60*3)
-        # Ensure you use "add" to not overwrite existing cookie headers
-        resp.headers.add(
-            'Set-Cookie', 'cross-site-cookie=bar; SameSite=None; Secure')
         return jsonify({"message": "User Verified", "user_id": db_user.id})
     return "Username or Password invalid"
 
@@ -310,9 +276,6 @@ def logged_in():
 def logout():
     session.pop('username', None)
     return jsonify('Logged Out')
-# def logout():
-#     session.clear()
-#     return jsonify('Logged out')
 
 
 if __name__ == '__main__':
