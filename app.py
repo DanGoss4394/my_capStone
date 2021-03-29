@@ -107,13 +107,12 @@ def register():
     return jsonify({"message": "User Verified", "user_id": new_user.id})
 
 
-@app.route('/api/v1/get_user/<user_id>')
-def get_user(user_id):
-    db_user = User.query.filter_by(id=user_id).first()
+@app.route('/api/v1/get_user/<username>')
+def get_user(username):
+    db_user = User.query.filter_by(username=username).first()
     if db_user is None:
-        return "Username NOT found", 404
-    user = User.query.filter_by(id=user_id).first()
-    return jsonify(user_schema.dump(user))
+        return "Username NOT found"
+    return jsonify(user_schema.dump(db_user))
 
 
 @app.route('/api/v1/get_all_users')
