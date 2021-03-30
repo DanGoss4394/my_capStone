@@ -7,10 +7,10 @@ from flask_marshmallow import Marshmallow
 from marshmallow import fields
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
+from hashlib import md5
 
 
 app = Flask(__name__)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL') or 'sqlite:///app.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -96,17 +96,20 @@ def register():
     username = post_data.get('username')
     email = post_data.get('email')
     password = post_data.get('password')
+    avatar = 'https://www.gravatar.com/avatar/' + \
+        md5(email.encode('utf-8')).hexdigest() + '?d=identicon'
     db_user = User.query.filter_by(username=username, email=email).first()
     if db_user:
         return 'Username or Email All Ready Used', 409
     hashed_password = flask_bcrypy.generate_password_hash(
         password).decode('utf-8')
-    new_user = User(username=username, email=email, password=hashed_password)
+    new_user = User(username=username, email=email,
+                    password=hashed_password, avatar=avatar)
     db.session.add(new_user)
     db.session.commit()
     session.permanent = True
     session['username'] = username
-    return jsonify({"message": "User Verified", "user_id": new_user.id, 'username': new_user.username})
+    return jsonify({"message": "User Verified", "user_id": new_user.id, 'username': new_user.username, "avatar": new_user.avatar})
 
 
 @app.route('/api/v1/get_user/<username>')
@@ -149,14 +152,12 @@ def delete_user(id):
 @app.route('/api/v1/profile', methods=['PATCH'])
 def add_profile():
     post_data = request.get_json()
-    avatar = post_data.get('avatar')
     state = post_data.get('state')
     country = post_data.get('country')
     user_id = post_data.get('user_id')
     user = User.query.filter_by(id=user_id).first()
     user.state = state
     user.country = country
-    user.avatar = avatar
     db.session.commit()
     return jsonify(user_schema.dump())
 
