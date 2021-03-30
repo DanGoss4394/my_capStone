@@ -1,3 +1,22 @@
+# My CapStone
+
+This app was built with all the knowlege i gained through Bottage.
+I made this social media app for my capstone for Bottage Course for anyone that would likes to do vlogs, blogs.
+This was really challenging for me but was really fun to build. At this moment this app only allows you to make a user create, edit, and delete blogs. visit other users profiles.
+
+# Link to my frontend git repo
+
+[React](https://github.com/DanGoss4394/my_capstone_frontend)
+
+# Packages I Used An The Doc links
+
+[Flask](https://flask.palletsprojects.com/en/1.1.x/)
+[Flask SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/en/2.x/)
+[Flask Marshmallow](https://flask-marshmallow.readthedocs.io/en/latest/)
+[Marshmallow-sqlalchemy](https://marshmallow-sqlalchemy.readthedocs.io/en/latest/)
+[Jinja](https://jinja.palletsprojects.com/en/2.11.x/)
+[Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/en/latest/)
+
 ## Venv:
 
 **Create Virtual Environment:**
@@ -53,3 +72,5 @@ After that enter the following command to create the database.
 >>>from YOUR_APP import db
 >>>db.create_all()
 ```
+
+#
