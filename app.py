@@ -32,6 +32,7 @@ class User(db.Model):
     username = db.Column(db.String(100), nullable=False, unique=True)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
+    avatar = db.Column(db.String(100), nullable=True)
     state = db.Column(db.String(2), nullable=True)
     country = db.Column(db.String(4), nullable=True)
     blogs = db.relationship('Blog', backref='user', lazy=True,
@@ -68,7 +69,8 @@ class ScheduleSchema(ma.SQLAlchemyAutoSchema):
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'username', 'email', 'profile', 'blogs', 'schedules')
+        fields = ('id', 'username', 'email', 'profile',
+                  'avatar', 'blogs', 'schedules')
     blogs = fields.List(fields.Nested(
         lambda: BlogSchema(only=('title', 'content'))))
     schedules = fields.List(fields.Nested(
@@ -147,12 +149,14 @@ def delete_user(id):
 @app.route('/api/v1/profile', methods=['PATCH'])
 def add_profile():
     post_data = request.get_json()
+    avatar = post_data.get('avatar')
     state = post_data.get('state')
     country = post_data.get('country')
     user_id = post_data.get('user_id')
     user = User.query.filter_by(id=user_id).first()
     user.state = state
     user.country = country
+    user.avatar = avatar
     db.session.commit()
     return jsonify(user_schema.dump())
 
