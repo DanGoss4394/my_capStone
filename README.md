@@ -10,12 +10,12 @@ This was really challenging for me but was really fun to build. At this moment t
 
 # Packages I Used An The Doc links
 
-[Flask](https://flask.palletsprojects.com/en/1.1.x/)
-[Flask SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/en/2.x/)
-[Flask Marshmallow](https://flask-marshmallow.readthedocs.io/en/latest/)
-[Marshmallow-sqlalchemy](https://marshmallow-sqlalchemy.readthedocs.io/en/latest/)
-[Jinja](https://jinja.palletsprojects.com/en/2.11.x/)
-[Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/en/latest/)
+- [Flask](https://flask.palletsprojects.com/en/1.1.x/)
+- [Flask SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/en/2.x/)
+- [Flask Marshmallow](https://flask-marshmallow.readthedocs.io/en/latest/)
+- [Marshmallow-sqlalchemy](https://marshmallow-sqlalchemy.readthedocs.io/en/latest/)
+- [Jinja](https://jinja.palletsprojects.com/en/2.11.x/)
+- [Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/en/latest/)
 
 ## Venv:
 
