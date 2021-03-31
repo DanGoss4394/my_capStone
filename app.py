@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 
-from flask import Flask, request, jsonify, session, render_template, make_response
+from flask import Flask, request, jsonify, session, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from marshmallow import fields
@@ -110,6 +110,7 @@ def register():
     session.permanent = True
     session['username'] = username
     return jsonify({"message": "User Verified", "user_id": new_user.id, 'username': new_user.username, "avatar": new_user.avatar})
+    # return jsonify({"message": "User Verified", "user_data": user_schema.dump(new_user)})
 
 
 @app.route('/api/v1/get_user/<username>')
