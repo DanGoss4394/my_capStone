@@ -260,7 +260,7 @@ def login():
     if valid_password:
         session.permanent = True
         session['username'] = post_data.get('username')
-        return jsonify({"message": "User Verified", "user_id": db_user.id, 'username': db_user.username})
+        return jsonify({"message": "User Verified", "user_id": db_user.id, 'username': db_user.username, "avatar": db_user.avatar})
     return "Username or Password invalid"
 
 
@@ -269,7 +269,7 @@ def logged_in():
     if 'username' in session:
         db_user = User.query.filter_by(username=session['username']).first()
         if db_user:
-            return jsonify({"message": "User Loggedin Via Cookie", "user_id": db_user.id, 'username': db_user.username})
+            return jsonify({"message": "User Loggedin Via Cookie", "user_id": db_user.id, 'username': db_user.username, "avatar": db_user.avatar})
         else:
             return jsonify('Session Exists, but no user')
     else:
